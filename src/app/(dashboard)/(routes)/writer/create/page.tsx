@@ -33,10 +33,11 @@ const Page = () => {
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
-      const response = await axios.post("api/blog", values);
-      //   router.push("/");
+      const response = await axios.post("/api/blogs", values);
+      router.push(`/writer/blogs/${response.data.id}`);
+      toast.success("Blog post created successfully!");
     } catch (error) {
-      toast.error("error");
+      toast.error("Failed to create blog post. Please try again later.");
     }
   };
 

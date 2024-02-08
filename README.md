@@ -266,6 +266,14 @@ const { isSubmitting, isValid } = form.formState;
 ```tsx
 const onSubmit = (values: z.infer<typeof formSchema>) => {
   console.log(values);
+
+  // try {
+  //   const response = await axios.post("/api/blogs", values);
+  //   router.push(`/writer/blogs/${response.data.id}`);
+  //   toast.success("Blog post created successfully!");
+  // } catch (error) {
+  //   toast.error("Failed to create blog post. Please try again later.");
+  }
 };
 ```
 
@@ -371,4 +379,226 @@ thats just how u pass faster, same as this
 
 ```tsx
 <Form resolver={form.resolver} defaultValues={form.defaultValues} />
+```
+
+# prisma
+
+npm
+
+```bash
+npm i -D prisma
+```
+
+init
+
+```bash
+npx prisma init
+```
+
+new stuff added:
+
+- schema
+- .env landlord string
+
+go here to rent free room
+
+https://www.elephantsql.com/
+
+login, create new instance, get the url
+
+# update env
+
+replcae the database url in env
+
+btw, since .env is created by prisma, just del the .env.local and move everything to .env
+
+# update schema.prisma
+
+make sure to add prisma in the relationMode
+
+```prisma
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  relationMode = "prisma"
+}
+```
+
+# create db
+
+npm
+
+```bash
+npm i @prisma/client
+```
+
+this allows us to talk to landlord db using prisma
+
+create a client that can return you db
+
+this will use the .env file that you set with the landlord string
+
+- lib
+  - db.ts
+
+there are things to consider when making a client
+
+you do not want to do this
+
+```ts
+export const db = new PrismaClient();
+```
+
+there is a `hot reload` -> everytime you save in development, a new prisma client is created -> overflow and crash development
+
+we are using globalThis -> this obj is not affected by hot reload
+
+the whole thing looks like this
+
+```ts
+import { PrismaClient } from "@prisma/client";
+
+declare global {
+  var prisma: PrismaClient | undefined;
+}
+
+export const db = globalThis.prisma || new PrismaClient();
+
+if (process.env.NODE_ENV !== "production") globalThis.prisma = db;
+```
+
+declare global -> this thing will be available anywhere in my project
+
+but why use var?
+
+- compatibility, global scope is accessed everywhere so using var ensures older js can know
+- thats how u declare global scope var - become part of the global obj
+- hoisted - accessed even before declaration
+- convention, everyone does it this way
+
+basically, set db and export it, global exists? use it, no? make new one CLIENT
+
+not inproduction? set global to const db just now
+
+why do that?
+
+we want to reassign the global to db NOT IN PROD - ensure that NOT IN PROD glob is always correct
+
+it is a sure fire way to make sure that on every hot reload, NOT IN PROD will always have correct db set to global
+
+# models
+
+go schema.prisma
+
+before making models install this extention in vscode to add syntax highlight -> prisma extention
+
+the plan here is that 1 tag can have many blog
+and 1 blog can have many attachment
+
+lets create category model
+
+```prisma
+model Tag {
+  id String @id @default(uuid())
+  name String @unique
+  blogs Blog[]
+}
+
+model Blog {
+  id String @id @default(uuid())
+  userId String
+  title String
+  imageUrl String? @db.Text
+  content String? @db.Text
+  isPublished Boolean @default(false)
+  tagId String?
+  tag Tag? @relation(fields:[tagId],references:[id])
+  attachments Attachment[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Attachment {
+  id String @id @default(uuid())
+  url String @de.Text
+  name String
+  blogId String
+  blog Blog @relation(fields:[blogId],references:[id],onDelete:Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([blogId])
+}
+```
+
+blog being the owners of attachments. and the thing that connects them is the field and ref
+
+@relation is to be written at the thing being owned
+
+the field is the thing that determine connection from the thing being owned
+
+while the ref is the thing that determines connection from the owner?
+
+@@index([blogId]) -> makes FK faster but adds mem overhead
+
+ok if done - can edit later btw no prob
+
+edit schema?
+
+locally add
+
+```bash
+npx prisma generate
+```
+
+- npx prisma generate -> model added to db.ts -> db.course is possible autocompletion
+
+- regenerate the Prisma Client -> code has access to the latest schema
+
+push to landlord
+
+```bash
+npx prisma db push
+```
+
+- npx prisma db push
+
+# make the api routes
+
+POST `api/blogs`
+
+routes are in
+
+- app
+  - api
+    - blogs
+
+basic route POST
+
+```ts
+import { db } from "@/lib/db";
+import { auth } from "@clerk/nextjs";
+import { NextResponse } from "next/server";
+
+export async function POST(req: Request) {
+  try {
+    const { userId } = auth();
+    if (!userId) {
+      return new NextResponse("Unauthorized", { status: 401 });
+    }
+    const { title } = await req.json();
+    const blog = await db.blog.create({ data: { userId, title } });
+    return NextResponse.json(blog);
+  } catch (error) {
+    console.log("[BLOGS]", error);
+    return new NextResponse("Internal Error", { status: 500 });
+  }
+}
+```
+
+log error with square bracket to add label to the log
+
+post ok? how do i see my tables? in prisma?
+
+```bash
+npx prisma studio
 ```
