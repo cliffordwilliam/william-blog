@@ -681,3 +681,116 @@ so use db IMMEDIATELY
 
 SERVER - redirect
 CLIENT - useRouter.push() pr stuff
+
+# pagination
+
+shadcn data table can do pagination
+
+add this to the DataTable imports
+
+`getPaginationRowModel,`
+
+and this to the useReactTable
+
+`getPaginationRowModel: getPaginationRowModel(),`
+
+and insert the additional tags from the pagination docs to the DataTable
+
+save it and you have pagination ready
+
+pagination done
+
+# sortable
+
+update the DataTable
+
+read the doc and do the other changes
+
+`import * as Reacr form react`
+
+update the Column
+
+then you are done, you can sort the title or any col u want
+
+copy paste for the other col so that they can sort too
+
+# action
+
+get dropdown
+
+```bash
+npx shadcn-ui@latest add dropdown-menu
+```
+
+import the following on the Columns compo
+
+```tsx
+import {
+  DropdownMenu,DropdownMenuContent,DropdownMenuContent,DropdownMenuTrigger
+}
+```
+
+then use it like this, create a new col in the Column prop
+
+```tsx
+{
+    id: "actions",
+    header: "Actions",
+    cell: ({ row }) => {
+      const { id } = row.original;
+      return (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant={"ghost"}>
+              <span className="sr-only">Open menu</span>
+              <MoreHorizontal />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <Link href={`/writer/blogs/${id}`}>
+              <DropdownMenuItem>
+                <Pencil className="mr-2" />
+                <span>Edit</span>
+              </DropdownMenuItem>
+            </Link>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      );
+    },
+  },
+```
+
+btw import like this so that it is rel to parent, safer
+
+```tsx
+@/components/ui/badge
+```
+
+# search
+
+this table can search too
+
+again just read from here
+
+https://ui.shadcn.com/docs/components/data-table#filtering
+
+once thats done add a link beside it to go to the create blog page
+
+take note that lets say i craete a blog? then manually go to the my blogs list
+
+it will not update ofc because it is seerver comp, so you need to refresh
+
+unless you edit, because the edit CLIENT will refresh the page forcing a refetch of the SERVER comp
+
+# create the home page - list all blogs
+
+in here we want to first create CLIENT comp that will have buttons.
+
+on click -> redirect to home + query
+
+said query will be used by the SERVER home page to refetch data
+
+there are 2 CLIENTS
+
+- seach - type and send with bouncer
+- button badges - categories
