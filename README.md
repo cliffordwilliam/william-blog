@@ -602,3 +602,82 @@ post ok? how do i see my tables? in prisma?
 ```bash
 npx prisma studio
 ```
+
+# edit page
+
+server
+
+IMMEDIATE db to get data
+
+```tsx
+const blog = await db.blog.findUnique({ where: { id: params.blogId } });
+```
+
+later has bunch of client comps in it to do the PATCH
+
+each time they patch they will rfresh the page -> making the server comp to refetch the data again
+
+also each time you use db always check if the user is logged in, api or page always check like this
+
+# get courses that belongs to 1 user - like inventory check all my items
+
+get shadcn table comp
+
+```tsx
+npx shadcn-ui@latest add table
+```
+
+get dependencies
+
+```tsx
+npm i @tanstack/react-table
+```
+
+get col defs
+
+https://ui.shadcn.com/docs/components/data-table
+
+create a Columns.tsx comp for that
+
+then create the DataTable comp in there too
+
+to use it get the DataTable and pass Columns as props to it columns={Columns}
+
+make sure that for now it matches the dummy data matches the example data type
+
+```tsx
+import { DataTable } from "@/components/DataTable";
+import { Payment, columns } from "@/components/Columns";
+
+const Page = () => {
+  // dummy
+  const data: Payment[] = [
+    {
+      id: "1",
+      amount: 100,
+      status: "pending",
+      email: "test@mail.com",
+    },
+  ];
+  return (
+    <div>
+      <DataTable columns={columns} data={data} />
+    </div>
+  );
+};
+
+export default Page;
+```
+
+table data rendered ok? modify the Columns comp
+
+change the datatype to Blog from client
+
+also update the header also in the Columns comp
+
+where you show all blogs that belong to a user is SERVER
+
+so use db IMMEDIATELY
+
+SERVER - redirect
+CLIENT - useRouter.push() pr stuff
