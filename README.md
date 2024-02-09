@@ -782,6 +782,50 @@ it will not update ofc because it is seerver comp, so you need to refresh
 
 unless you edit, because the edit CLIENT will refresh the page forcing a refetch of the SERVER comp
 
+# seed the tags
+
+create new dir scripts -> sibling of public and prisma and lib and compo..
+
+- scripts
+  - seedTag.ts
+
+IIFE
+
+```ts
+const { PrismaClient } = require("@prisma/client");
+
+const db = new PrismaClient();
+
+(async () => {
+  try {
+    await db.tag.createMany({
+      data: [
+        { name: "Technology" },
+        { name: "Programming" },
+        { name: "Science" },
+        { name: "Art" },
+        { name: "Music" },
+        { name: "Travel" },
+        { name: "Food" },
+      ],
+    });
+    console.log("Success seeding tags");
+  } catch (error) {
+    console.log("Error seeding tags", error);
+  } finally {
+    await db.$disconnect();
+  }
+})();
+```
+
+to run use node
+
+```bash
+node scripts/seedTag.ts
+```
+
+seeding is done
+
 # create the home page - list all blogs
 
 in here we want to first create CLIENT comp that will have buttons.
@@ -794,3 +838,126 @@ there are 2 CLIENTS
 
 - seach - type and send with bouncer
 - button badges - categories
+
+lets work on the button badges thing first
+
+so this thing is made out of 2 things
+
+the Tags CLIENT comp
+then the tagItem CLIENT comp
+
+# get all tags sort asc name
+
+in SERVER
+
+# pass data to Tags CLIENT
+
+later it will pass to Tag CLIENT
+
+but before proceeding we need this npm
+
+```bash
+npm i query-string
+```
+
+avoid name conflict with TagsList and TagItem
+
+# creating the TagItem
+
+CLIENT
+
+get this to build query url to be kick to
+
+```bash
+npm install query-string
+```
+
+import it like this
+
+```tsx
+import qs from "query-string";
+```
+
+then basically check the params/query
+
+got title? got id?
+
+if got then set to current
+
+check also if it is selected
+
+cuz if selected but got clicked, then url is empty - deselect this tag
+
+so when u click u add to param and kick thats it
+
+here just use tagId first, later if got more param being added by other client add it here
+
+so whoever adds, need to make sure they do not delete other's params
+
+do the same but with search input, this thing uses debounce
+
+to use debounce, create custom hooks
+
+dir hooks sibling to components, lib, node_modules
+
+```tsx
+"use client";
+
+import { Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import useDebounce from "@/hooks/useDebounce";
+import { useEffect, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import qs from "query-string";
+
+const SearchInput = () => {
+  const [value, setValue] = useState("");
+  const debounceValue = useDebounce(value);
+  const pathName = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const currentTagId = searchParams.get("tagId");
+  useEffect(() => {
+    const url = qs.stringifyUrl(
+      {
+        url: pathName,
+        query: {
+          blogTitle: debounceValue,
+          tagId: currentTagId,
+        },
+      },
+      { skipEmptyString: true, skipNull: true }
+    );
+    router.push(url);
+  }, [debounceValue, currentTagId, router, pathName]);
+  return (
+    <div className="relative">
+      <Search className="h-4 w-4 absolute top-3 left-3 text-slate-600" />
+      <Input
+        onChange={(e) => setValue(e.target.value)}
+        value={value}
+        className="w-full md:w-[300px] pl-9 rounded-full bg-slate-100 focus-visible:ring-slate-200"
+        placeholder="Search for a blog"
+      />
+    </div>
+  );
+};
+
+export default SearchInput;
+```
+
+so basically have a useEffect that gets called when
+
+i will push router to the url
+
+when u type into the input, use state will be called -> passed into debounce, thats it
+
+# use the search and tag selector to GET for public blogs
+
+since this one can get optional param, the action is going to be long
+
+so create a new dir called action, in there u can build the db talk
+
+maybe no need la
+
+need to add something to prisma schema later for search @@ something title otherwise cannot search by title
